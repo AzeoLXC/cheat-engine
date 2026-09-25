@@ -1,61 +1,63 @@
-<p align="center">
-    <a href="https://github.com/cheat-engine/cheat-engine/raw/master/Cheat%20Engine/images">
-        <img src="https://github.com/cheat-engine/cheat-engine/raw/master/Cheat%20Engine/images/celogo.png" />
-    </a>
-</p>
+# Cheat Engine
 
-<h1 align="center">Cheat Engine</h1>
+Fork dari [Cheat Engine](https://github.com/cheat-engine/cheat-engine) dengan workflow GitHub Actions untuk build dan release Windows.
 
-Cheat Engine is a development environment focused on modding games and applications for personal use.
+## Release
 
+Release tersedia di:
 
-# Download
+https://github.com/AzeoLXC/cheat-engine/releases
 
-  * **[Latest Version](https://github.com/cheat-engine/cheat-engine/releases/latest)**
+Asset Windows yang dipublikasikan:
 
-[Older versions](https://github.com/cheat-engine/cheat-engine/releases)
+- x86
+- x64
 
+Format nama file:
 
-# Links
+```text
+Cheat-Engine_v<version>_<yyyymmdd>_<commit>_x86.exe
+Cheat-Engine_v<version>_<yyyymmdd>_<commit>_x64.exe
+```
 
-  * [Website](https://www.cheatengine.org)
-  * [Forum](https://forum.cheatengine.org)
-  * [Forum (alternate)](https://opencheattables.com/)
-  * [Forum (alternate)](https://fearlessrevolution.com/index.php)
-  * [Wiki](https://wiki.cheatengine.org/index.php?title=Main_Page)
+## Build dari GitHub Web
 
-## Social Media
+1. Buka tab **Actions**.
+2. Pilih **Build and release Cheat Engine**.
+3. Klik **Run workflow**.
+4. Pilih branch `master`.
+5. Isi `release_tag`, misalnya `v7.5.0-2`.
+6. Jalankan workflow.
 
-  * [Reddit](https://reddit.com/r/cheatengine)
-  * [Twitter](https://twitter.com/_cheatengine)
+Workflow akan:
 
-## Donate
+- mengambil source repository;
+- memasang Lazarus 2.2.2 dan FPC 3.2.2;
+- build mode `Release 32-Bit` dan `Release 64-Bit`;
+- membuat asset release Windows x86 dan x64;
+- membuat GitHub Release untuk tag yang dipilih.
 
-  * [Patreon](https://www.patreon.com/cheatengine)
-  * [PayPal](https://www.paypal.com/xclick/business=dark_byte%40hotmail.com&no_note=1&tax=0&lc=US)
+## Build lokal
 
+Build utama menggunakan Lazarus 2.2.2 dan FPC 3.2.2.
 
-## Basic Build Instructions
+1. Install Lazarus 2.2.2 untuk Windows 64-bit.
+2. Install cross compiler `cross-i386-win32-win64`.
+3. Buka `Cheat Engine/cheatengine.lpi` di Lazarus.
+4. Pilih build mode `Release 32-Bit` atau `Release 64-Bit`.
+5. Jalankan build.
 
-  1. Download Lazarus 2.2.2 from https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%202.2.2/ First install lazarus-2.2.2-fpc-3.2.2-win64.exe and then lazarus-2.2.2-fpc-3.2.2-cross-i386-win32-win64.exe
-  
-  2. Run Lazarus and click on `Project->Open Project`. Select `cheatengine.lpi` from the `Cheat Engine` folder as the project.
-  3. Click on `Run->Build` or press <kbd>SHIFT+F9</kbd>.
-      * you can also click on `Run->Compile many Modes` (tip: select first three compile modes)
-      * If you want to run or debug from the IDE on Windows you will need to run Lazarus as administrator.
-      
-  Do not forget to compile secondary projects you'd like to use:
-  
-     speedhack.lpr: Compile both 32- and 64-bit DLL's for speedhack capability
-     luaclient.lpr: Compile both 32- and 64-bit DLL's for {$luacode} capability
-     DirectXMess.sln: Compile for 32-bit and 64-bit for D3D overlay and snapshot capabilities
-     DotNetcompiler.sln: for the cscompile lua command
-     monodatacollector.sln: Compile both 32-bit and 64-bit dll's to get Mono features to inspect the .NET environment of the process    
-     dotnetdatacollector.sln: Compile both 32- and 64-bit EXE's to get .NET symbols
-     dotnetinvasivedatacollector.sln: Compile this managed .DLL to add support for runtime JIT support
-     cejvmti.sln: Compile both 32- and 64-bit DLL's for Java inspection support
-     tcclib.sln: Compile 32-32, 64-32 and 64-64 to add {$C} and {$CCODE} support in scripts
-     vehdebug.lpr: Compile 32- and 64-bit DLL's to add support for the VEH debugger interface
-     dbkkernel.sln: for kernelmode functions (settings->extra) You will need to build the no-sig version and either boot with unsigned driver support, or sign the driver yourself    
-    
-*.SLN files require visual studio (Usually 2017)
+Output masuk ke `Cheat Engine/bin`.
+
+Build dari command line menggunakan `lazbuild`:
+
+```text
+lazbuild "Cheat Engine/cheatengine.lpi" --build-mode="Release 32-Bit"
+lazbuild "Cheat Engine/cheatengine.lpi" --build-mode="Release 64-Bit"
+```
+
+## Upstream
+
+- Website: https://www.cheatengine.org
+- Source upstream: https://github.com/cheat-engine/cheat-engine
+- Forum: https://forum.cheatengine.org
