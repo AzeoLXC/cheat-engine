@@ -2,6 +2,11 @@ name: Build and release Cheat Engine
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Optional release tag, for example v7.5.0-azeolxc.1'
+        required: false
+        type: string
   push:
     tags:
       - 'v*'
@@ -64,11 +69,13 @@ jobs:
           if-no-files-found: error
 
       - name: Create GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         shell: pwsh
         run: |
-          gh release create "$env:GITHUB_REF_NAME" "$env:PACKAGE" `
-            --title "Cheat Engine $env:GITHUB_REF_NAME" `
+          gh release create "$env:RELEASE_TAG" "$env:PACKAGE" `
+            --target "$env:GITHUB_SHA" `
+            --title "Cheat Engine $env:RELEASE_TAG" `
             --generate-notes
