@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Optional release tag, for example v7.5.0-azeolxc.1'
+        description: 'Optional release tag, for example v7.5.0-1'
         required: false
         type: string
   push:
@@ -77,5 +77,5 @@ jobs:
         run: |
           gh release create "$env:RELEASE_TAG" "$env:PACKAGE" `
             --target "$env:GITHUB_SHA" `
-            --title "Cheat Engine $env:RELEASE_TAG" `
+            --title "Cheat Engine $($env:RELEASE_TAG -replace '^v', '')" `
             --generate-notes
