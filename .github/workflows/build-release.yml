@@ -48,19 +48,52 @@ jobs:
           & "$env:LAZARUS_DIR\lazbuild.exe" "$env:PROJECT_DIR\cheatengine.lpi" --build-mode='Release 32-Bit'
           & "$env:LAZARUS_DIR\lazbuild.exe" "$env:PROJECT_DIR\cheatengine.lpi" --build-mode='Release 64-Bit'
 
-      - name: Prepare standalone executables
+      - name: Prepare release tag
+        if: inputs.release_tag != '' && !startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ref = "refs/tags/$env:RELEASE_TAG"
+          $existing = gh api "repos/$env:GITHUB_REPOSITORY/git/ref/$ref" 2>$null
+          if (-not $existing) {
+            gh api "repos/$env:GITHUB_REPOSITORY/git/refs" -f ref=$ref -f sha=$env:GITHUB_SHA | Out-Null
+          }
+
+      - name: Prepare self-extracting executables
         shell: pwsh
         env:
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           $ErrorActionPreference = 'Stop'
           $version = $env:RELEASE_TAG
-          $date = Get-Date -Format 'yyyyMMdd'
+          $date = Get-Date -AsUTC -Format 'yyyyMMdd'
           $hash = $env:GITHUB_SHA.Substring(0, 7)
           $output = "Cheat-Engine_${version}_${date}_${hash}"
+          $payload = Join-Path $env:RUNNER_TEMP 'cheat-engine-payload'
           New-Item -ItemType Directory -Force $output | Out-Null
-          Copy-Item "$env:PROJECT_DIR\bin\cheatengine-i386.exe" "$output\${output}_x86.exe"
-          Copy-Item "$env:PROJECT_DIR\bin\cheatengine-x86_64.exe" "$output\${output}_x64.exe"
+          New-Item -ItemType Directory -Force $payload | Out-Null
+          Copy-Item "$env:PROJECT_DIR\bin\*" $payload -Recurse
+
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          $sfx = Join-Path (Split-Path $sevenZip) '7z.sfx'
+          if (-not (Test-Path $sfx)) { throw "7z.sfx was not found next to 7z.exe" }
+
+          function New-Sfx($targetName, $programName) {
+            $config = Join-Path $env:RUNNER_TEMP "$targetName.txt"
+            $configText = ';!@Install@!UTF-8!' + "`r`n" + 'RunProgram="' + $programName + '"' + "`r`n" + ';!@InstallEnd@!' + "`r`n"
+            [IO.File]::WriteAllText($config, $configText, [Text.UTF8Encoding]::new($false))
+            $archive = Join-Path $env:RUNNER_TEMP "$targetName.7z"
+            & $sevenZip a -t7z -mx=9 $archive "$payload\*" | Out-Host
+            if ($LASTEXITCODE -ne 0) { throw "7-Zip failed for $targetName" }
+            cmd.exe /c copy /b "`"$sfx`"+`"$config`"+`"$archive`"" "`"$(Join-Path $output $targetName)`"" | Out-Host
+            if ($LASTEXITCODE -ne 0) { throw "SFX creation failed for $targetName" }
+          }
+
+          New-Sfx "${output}_x86.exe" 'cheatengine-i386.exe'
+          New-Sfx "${output}_x64.exe" 'cheatengine-x86_64.exe'
           "PACKAGE_DIR=$output" | Out-File $env:GITHUB_ENV -Append
           "X86_FILE=$output\${output}_x86.exe" | Out-File $env:GITHUB_ENV -Append
           "X64_FILE=$output\${output}_x64.exe" | Out-File $env:GITHUB_ENV -Append
