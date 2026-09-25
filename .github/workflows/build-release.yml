@@ -54,7 +54,7 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $version = $env:RELEASE_TAG -replace '^v', ''
+          $version = $env:RELEASE_TAG
           $date = Get-Date -Format 'yyyyMMdd'
           $hash = $env:GITHUB_SHA.Substring(0, 7)
           $output = "Cheat-Engine_${version}_${date}_${hash}"
