@@ -1,0 +1,74 @@
+name: Build and release Cheat Engine
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-2022
+    env:
+      LAZARUS_DIR: C:\lazarus
+      PROJECT_DIR: Cheat Engine
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Lazarus 2.2.2 and cross compiler
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $base = 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%202.2.2'
+          $native = "$base/lazarus-2.2.2-fpc-3.2.2-win64.exe/download"
+          $cross = "$base/lazarus-2.2.2-fpc-3.2.2-cross-i386-win32-win64.exe/download"
+          curl.exe -fL --retry 3 --output "$env:TEMP\lazarus.exe" $native
+          curl.exe -fL --retry 3 --output "$env:TEMP\lazarus-cross-i386.exe" $cross
+          Start-Process "$env:TEMP\lazarus.exe" -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
+          Start-Process "$env:TEMP\lazarus-cross-i386.exe" -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
+          if (-not (Test-Path "$env:LAZARUS_DIR\lazbuild.exe")) {
+            throw 'lazbuild.exe was not installed at C:\lazarus'
+          }
+
+      - name: Build 32-bit and 64-bit binaries
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & "$env:LAZARUS_DIR\lazbuild.exe" "$env:PROJECT_DIR\cheatengine.lpi" --build-mode='Release 32-Bit'
+          & "$env:LAZARUS_DIR\lazbuild.exe" "$env:PROJECT_DIR\cheatengine.lpi" --build-mode='Release 64-Bit'
+
+      - name: Package binaries and checksums
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $output = 'Cheat-Engine-' + $env:GITHUB_SHA
+          New-Item -ItemType Directory -Force $output | Out-Null
+          Copy-Item "$env:PROJECT_DIR\bin\*" $output -Recurse
+          Get-ChildItem $output -File -Recurse | Get-FileHash -Algorithm SHA256 |
+            ForEach-Object { "$($_.Hash)  $($_.Path.Substring((Get-Location).Path.Length + 1))" } |
+            Set-Content "$output\SHA256SUMS.txt"
+          Compress-Archive -Path "$output\*" -DestinationPath "$output.zip"
+          "PACKAGE=$output.zip" | Out-File $env:GITHUB_ENV -Append
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cheat-engine-${{ github.sha }}
+          path: ${{ env.PACKAGE }}
+          if-no-files-found: error
+
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release create "$env:GITHUB_REF_NAME" "$env:PACKAGE" `
+            --title "Cheat Engine $env:GITHUB_REF_NAME" `
+            --generate-notes
