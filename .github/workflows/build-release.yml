@@ -48,20 +48,6 @@ jobs:
           & "$env:LAZARUS_DIR\lazbuild.exe" "$env:PROJECT_DIR\cheatengine.lpi" --build-mode='Release 32-Bit'
           & "$env:LAZARUS_DIR\lazbuild.exe" "$env:PROJECT_DIR\cheatengine.lpi" --build-mode='Release 64-Bit'
 
-      - name: Prepare release tag
-        if: inputs.release_tag != '' && !startsWith(github.ref, 'refs/tags/')
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $ref = "refs/tags/$env:RELEASE_TAG"
-          $existing = gh api "repos/$env:GITHUB_REPOSITORY/git/ref/$ref" 2>$null
-          if (-not $existing) {
-            gh api "repos/$env:GITHUB_REPOSITORY/git/refs" -f ref=$ref -f sha=$env:GITHUB_SHA | Out-Null
-          }
-
       - name: Prepare self-extracting executables
         shell: pwsh
         env:
@@ -88,8 +74,15 @@ jobs:
             $archive = Join-Path $env:RUNNER_TEMP "$targetName.7z"
             & $sevenZip a -t7z -mx=9 $archive "$payload\*" | Out-Host
             if ($LASTEXITCODE -ne 0) { throw "7-Zip failed for $targetName" }
-            cmd.exe /c copy /b "`"$sfx`"+`"$config`"+`"$archive`"" "`"$(Join-Path $output $targetName)`"" | Out-Host
-            if ($LASTEXITCODE -ne 0) { throw "SFX creation failed for $targetName" }
+            $target = Join-Path $output $targetName
+            $targetStream = [IO.File]::Create($target)
+            try {
+              foreach ($part in @($sfx, $config, $archive)) {
+                $partStream = [IO.File]::OpenRead($part)
+                try { $partStream.CopyTo($targetStream) } finally { $partStream.Dispose() }
+              }
+            } finally { $targetStream.Dispose() }
+            if (-not (Test-Path $target)) { throw "SFX creation failed for $targetName" }
           }
 
           New-Sfx "${output}_x86.exe" 'cheatengine-i386.exe'
