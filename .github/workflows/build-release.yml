@@ -64,14 +64,21 @@ jobs:
           Copy-Item "$env:PROJECT_DIR\bin\*" $payload -Recurse
 
           $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
-          $extraArchive = Join-Path $env:RUNNER_TEMP '7z-extra.7z'
-          $extraDir = Join-Path $env:RUNNER_TEMP '7z-extra'
-          curl.exe -fL --retry 3 --output $extraArchive 'https://github.com/ip7z/7zip/releases/download/26.03/7z2603-extra.7z'
-          New-Item -ItemType Directory -Force $extraDir | Out-Null
-          & $sevenZip x $extraArchive "-o$extraDir" -y | Out-Host
-          if ($LASTEXITCODE -ne 0) { throw 'Failed to extract 7-Zip Extra' }
-          $sfx = (Get-ChildItem $extraDir -Filter '7z.sfx' -Recurse | Select-Object -First 1).FullName
-          if (-not $sfx) { throw '7z.sfx was not found in 7-Zip Extra' }
+          $sdkArchive = Join-Path $env:RUNNER_TEMP 'lzma-sdk.7z'
+          $sdkDir = Join-Path $env:RUNNER_TEMP 'lzma-sdk'
+          curl.exe -fL --retry 3 --output $sdkArchive 'https://github.com/ip7z/7zip/releases/download/26.03/lzma2603.7z'
+          New-Item -ItemType Directory -Force $sdkDir | Out-Null
+          & $sevenZip x $sdkArchive "-o$sdkDir" -y | Out-Host
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to extract the LZMA SDK' }
+          $sfx = (Get-ChildItem -Path $sdkDir -Recurse -File |
+            Where-Object { $_.Extension -ieq '.sfx' -and $_.Name -ieq '7zSD.sfx' } |
+            Select-Object -First 1).FullName
+          if (-not $sfx) {
+            $sfx = (Get-ChildItem -Path $sdkDir -Recurse -File |
+              Where-Object { $_.Extension -ieq '.sfx' } |
+              Select-Object -First 1).FullName
+          }
+          if (-not $sfx) { throw 'No SFX module was found in the LZMA SDK' }
 
           function New-Sfx($targetName, $programName) {
             $config = Join-Path $env:RUNNER_TEMP "$targetName.txt"
