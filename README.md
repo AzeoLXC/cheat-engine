@@ -1,55 +1,57 @@
 # Cheat Engine
 
-Fork dari [Cheat Engine](https://github.com/cheat-engine/cheat-engine) dengan workflow GitHub Actions untuk build dan release Windows.
+A fork of [Cheat Engine](https://github.com/cheat-engine/cheat-engine) with GitHub Actions workflows for Windows builds and releases.
 
-## Release
+[Versi Bahasa Indonesia](README_id.md)
 
-Release tersedia di:
+## Releases
+
+Releases are available at:
 
 https://github.com/AzeoLXC/cheat-engine/releases
 
-Asset Windows yang dipublikasikan:
+Published Windows assets:
 
 - x86
 - x64
 
-Format nama file:
+File name format:
 
 ```text
 Cheat-Engine_v<version>_<yyyymmdd>_<commit>_x86.exe
 Cheat-Engine_v<version>_<yyyymmdd>_<commit>_x64.exe
 ```
 
-## Build dari GitHub Web
+## Build from GitHub Web
 
-1. Buka tab **Actions**.
-2. Pilih **Build and release Cheat Engine**.
-3. Klik **Run workflow**.
-4. Pilih branch `master`.
-5. Isi `release_tag`, misalnya `v7.5.0-2`.
-6. Jalankan workflow.
+1. Open the **Actions** tab.
+2. Select **Build and release Cheat Engine**.
+3. Click **Run workflow**.
+4. Select the `master` branch.
+5. Enter a `release_tag`, for example `v7.5.0-2`.
+6. Run the workflow.
 
-Workflow akan:
+The workflow will:
 
-- mengambil source repository;
-- memasang Lazarus 2.2.2 dan FPC 3.2.2;
-- build mode `Release 32-Bit` dan `Release 64-Bit`;
-- membuat asset release Windows x86 dan x64;
-- membuat GitHub Release untuk tag yang dipilih.
+- check out the repository source;
+- install Lazarus 2.2.2 and FPC 3.2.2;
+- build the `Release 32-Bit` and `Release 64-Bit` modes;
+- create Windows x86 and x64 release assets;
+- create a GitHub Release for the selected tag.
 
-## Build lokal
+## Local build
 
-Build utama menggunakan Lazarus 2.2.2 dan FPC 3.2.2.
+The main build uses Lazarus 2.2.2 and FPC 3.2.2.
 
-1. Install Lazarus 2.2.2 untuk Windows 64-bit.
-2. Install cross compiler `cross-i386-win32-win64`.
-3. Buka `Cheat Engine/cheatengine.lpi` di Lazarus.
-4. Pilih build mode `Release 32-Bit` atau `Release 64-Bit`.
-5. Jalankan build.
+1. Install Lazarus 2.2.2 for 64-bit Windows.
+2. Install the `cross-i386-win32-win64` cross compiler.
+3. Open `Cheat Engine/cheatengine.lpi` in Lazarus.
+4. Select the `Release 32-Bit` or `Release 64-Bit` build mode.
+5. Build the project.
 
-Output masuk ke `Cheat Engine/bin`.
+Output is written to `Cheat Engine/bin`.
 
-Build dari command line menggunakan `lazbuild`:
+Command-line build with `lazbuild`:
 
 ```text
 lazbuild "Cheat Engine/cheatengine.lpi" --build-mode="Release 32-Bit"
@@ -59,5 +61,5 @@ lazbuild "Cheat Engine/cheatengine.lpi" --build-mode="Release 64-Bit"
 ## Upstream
 
 - Website: https://www.cheatengine.org
-- Source upstream: https://github.com/cheat-engine/cheat-engine
+- Upstream source: https://github.com/cheat-engine/cheat-engine
 - Forum: https://forum.cheatengine.org
