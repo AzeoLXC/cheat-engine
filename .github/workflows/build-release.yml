@@ -48,24 +48,28 @@ jobs:
           & "$env:LAZARUS_DIR\lazbuild.exe" "$env:PROJECT_DIR\cheatengine.lpi" --build-mode='Release 32-Bit'
           & "$env:LAZARUS_DIR\lazbuild.exe" "$env:PROJECT_DIR\cheatengine.lpi" --build-mode='Release 64-Bit'
 
-      - name: Package binaries and checksums
+      - name: Prepare standalone executables
         shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $output = 'Cheat-Engine-' + $env:GITHUB_SHA
+          $version = $env:RELEASE_TAG -replace '^v', ''
+          $date = Get-Date -Format 'yyyyMMdd'
+          $hash = $env:GITHUB_SHA.Substring(0, 7)
+          $output = "Cheat-Engine_${version}_${date}_${hash}"
           New-Item -ItemType Directory -Force $output | Out-Null
-          Copy-Item "$env:PROJECT_DIR\bin\*" $output -Recurse
-          Get-ChildItem $output -File -Recurse | Get-FileHash -Algorithm SHA256 |
-            ForEach-Object { "$($_.Hash)  $($_.Path.Substring((Get-Location).Path.Length + 1))" } |
-            Set-Content "$output\SHA256SUMS.txt"
-          Compress-Archive -Path "$output\*" -DestinationPath "$output.zip"
-          "PACKAGE=$output.zip" | Out-File $env:GITHUB_ENV -Append
+          Copy-Item "$env:PROJECT_DIR\bin\cheatengine-i386.exe" "$output\${output}_x86.exe"
+          Copy-Item "$env:PROJECT_DIR\bin\cheatengine-x86_64.exe" "$output\${output}_x64.exe"
+          "PACKAGE_DIR=$output" | Out-File $env:GITHUB_ENV -Append
+          "X86_FILE=$output\${output}_x86.exe" | Out-File $env:GITHUB_ENV -Append
+          "X64_FILE=$output\${output}_x64.exe" | Out-File $env:GITHUB_ENV -Append
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: cheat-engine-${{ github.sha }}
-          path: ${{ env.PACKAGE }}
+          path: ${{ env.PACKAGE_DIR }}\*.exe
           if-no-files-found: error
 
       - name: Create GitHub release
@@ -75,7 +79,7 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         shell: pwsh
         run: |
-          gh release create "$env:RELEASE_TAG" "$env:PACKAGE" `
+          gh release create "$env:RELEASE_TAG" "$env:X86_FILE" "$env:X64_FILE" `
             --target "$env:GITHUB_SHA" `
             --title "Cheat Engine $($env:RELEASE_TAG -replace '^v', '')" `
             --generate-notes
