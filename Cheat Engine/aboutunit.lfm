@@ -667,9 +667,14 @@ object About: TAbout
       Left = 191
       Height = 15
       Top = 0
-      Width = 102
-      Caption = 'Made by: Dark Byte'
+      Width = 180
+      Cursor = crHandPoint
+      Caption = 'Fork maintained by AzeoLXC'
+      Font.Color = clBlue
+      Font.Style = [fsUnderline]
       ParentColor = False
+      ParentFont = False
+      OnClick = Label1Click
     end
     object Label6: TLabel
       AnchorSideLeft.Control = Label10

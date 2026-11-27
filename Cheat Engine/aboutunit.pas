@@ -55,6 +55,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure Label4Click(Sender: TObject);
+    procedure Label1Click(Sender: TObject);
     procedure Label8Click(Sender: TObject);
     procedure Label9Click(Sender: TObject);
     procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -107,6 +108,7 @@ procedure TAbout.FormCreate(Sender: TObject);
 begin
   if ShouldAppsUseDarkMode then
   begin
+    label1.font.color:=clTeal;
     label8.font.color:=clTeal;
     label9.font.color:=clTeal;
   end;
@@ -157,6 +159,11 @@ end;
 procedure TAbout.Label4Click(Sender: TObject);
 begin
   shellexecute(0,'open',pchar('https://www.patreon.com/cheatengine'),nil,nil,sw_maximize);
+end;
+
+procedure TAbout.Label1Click(Sender: TObject);
+begin
+  ShellExecute(0, pchar('open'), pchar('https://github.com/AzeoLXC/cheat-engine'), pchar(''), pchar(''), SW_MAXIMIZE);
 end;
 
 procedure TAbout.Label8Click(Sender: TObject);
